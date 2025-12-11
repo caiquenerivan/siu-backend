@@ -1,0 +1,116 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // Adicione a linha abaixo que está faltando:
+  url      = env("DATABASE_URL")
+}
+
+// Enums para garantir integridade
+enum UserRole {
+  ADMIN
+  OPERADOR
+  MOTORISTA
+}
+
+enum TipoPessoa {
+  PF
+  PJ
+}
+
+enum StatusVeiculo {
+  REGULAR
+  FURTO
+  ROUBO
+}
+
+enum StatusMotorista {
+  PENDENTE
+  ATIVO
+  BLOQUEADO
+}
+
+// Tabela Central de Utilizadores (Login)
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações (Um utilizador pode ser UM destes)
+  admin    Admin?
+  operator Operator?
+  driver   Driver?
+
+  @@map("users")
+}
+
+model Admin {
+  id           String @id @default(uuid())
+  name         String
+  company      String
+  region       String
+  cpfCnpj      String
+  
+  userId       String @unique
+  user         User   @relation(fields: [userId], references: [id])
+
+  @@map("admins")
+}
+
+model Operator {
+  id           String     @id @default(uuid())
+  name         String
+  type         TipoPessoa
+  company      String
+  region       String
+  cpf          String?
+  cnpj         String?
+  
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@map("operators")
+}
+
+model Driver {
+  id              String          @id @default(uuid())
+  name            String
+  cnh             String          @unique
+  status          StatusMotorista @default(PENDENTE)
+  photoUrl        String?
+  company         String?
+  toxicologyExam  DateTime?
+  publicToken     String          @unique @default(uuid()) // Para o QR Code
+  
+  userId          String          @unique
+  user            User            @relation(fields: [userId], references: [id])
+  
+  currentVehicleId String?        @unique
+  vehicle          Vehicle?       @relation(fields: [currentVehicleId], references: [id])
+
+  @@map("drivers")
+}
+
+model Vehicle {
+  id              String        @id @default(uuid())
+  plate           String        @unique // Placa
+  model           String
+  brand           String
+  color           String
+  status          StatusVeiculo @default(REGULAR)
+  licensingDate   DateTime
+  ownerName       String
+  
+  driver          Driver? 
+
+  @@map("vehicles")
+}
