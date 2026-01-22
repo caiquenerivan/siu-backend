@@ -6,13 +6,15 @@ import { env } from 'node:process';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
+    console.log('Segredo usado : ', env.JWT_SECRET);
+    
     super({
       // 1. Onde buscar o token? No cabeçalho "Authorization: Bearer ..."
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       // 2. Ignorar token expirado? Não (false), se expirou, bloqueia.
       ignoreExpiration: false,
-      // 3. A mesma senha secreta que usamos no auth.module.ts
-      secretOrKey: env.SECRET_KEY || 'default-secret', //
+      
+      secretOrKey: env.JWT_SECRET || 'default-secret', //
     });
   }
 

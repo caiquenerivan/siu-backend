@@ -7,6 +7,18 @@ import { AuthGuard } from '@nestjs/passport';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  @UseGuards(AuthGuard('jwt'))  
+  findAll() {
+    return this.usersService.findAll();
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard('jwt'))  
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
   /*
   @Post()
   create(@Body() createUserDto: CreateUserDto) {

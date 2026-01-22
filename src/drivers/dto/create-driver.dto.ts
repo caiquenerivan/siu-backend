@@ -1,5 +1,5 @@
 import { StatusMotorista } from "@prisma/client";
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
+import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
 
 export class CreateDriverDto {
   // --- Dados do USER ---
@@ -37,5 +37,8 @@ export class CreateDriverDto {
   @IsOptional()
   @IsUUID()
   currentVehicleId?: string;
+
+  @IsDateString() 
+  toxicologyExam?: string;
 
 }
