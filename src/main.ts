@@ -12,7 +12,7 @@ async function bootstrap() {
   }));
 
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://siu.inf.br/login'], // A porta padrão do Vite
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://siu.inf.br'], // A porta padrão do Vite
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
