@@ -40,6 +40,9 @@ export class DriversService {
           cnh: data.cnh,
           company: data.company,
           photoUrl: data.photoUrl,
+          toxicologyExam: data.toxicologyExam,
+          status: data.status || StatusMotorista.PENDENTE,
+          currentVehicleId: data.currentVehicleId,
           userId: newUser.id, // VINCULO AQUI
         },
         include: { user: true }, // Retorna com os dados do usuário
