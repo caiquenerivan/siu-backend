@@ -30,8 +30,10 @@
     "@prisma/client": "^5.22.0",
     "@types/passport-local": "^1.0.38",
     "bcrypt": "^6.0.0",
+    "buffer-to-stream": "^1.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "cloudinary": "^2.9.0",
     "dotenv": "^17.2.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -48,6 +50,7 @@
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
@@ -85,6 +88,6 @@
     "testEnvironment": "node"
   },
   "prisma": {
-    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts" 
+    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
   }
 }

@@ -1,18 +1,48 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Controller('drivers')
 export class DriversController {
-  constructor(private readonly driversService: DriversService) {}
+  constructor(
+    private readonly driversService: DriversService,
+    private readonly cloudinaryService: CloudinaryService, // Injete o serviço
+  ) {}
 
   @Post()
+  @UseInterceptors(FileInterceptor('file'))
   @UseGuards(AuthGuard('jwt'))
-  create(@Body() createDriverDto: CreateDriverDto) {
-    return this.driversService.create(createDriverDto);
+  async create(@Body() body: any, @UploadedFile() file: Express.Multer.File,) {
+    
+    console.log('Dados recebidos:', body); // Para debug
+
+    let photoUrl = '';
+    if (file) {
+      photoUrl = await this.cloudinaryService.uploadImage(file);
+    }
+    // 1. Montamos o objeto DTO manualmente, pois os dados vieram "soltos" no FormData
+    // Nota: O FormData transforma tudo em string, então cuidado com datas/números
+    const createDriverDto = {
+      name: body.name,
+      email: body.email,
+      password: body.password,
+      cnh: body.cnh,
+      company: body.company,
+      status: body.status || 'PENDENTE',
+      // Converte string para Date, ou null se não vier
+      toxicologyExam: body.toxicologyExam ? new Date(body.toxicologyExam) : null,
+      photoUrl: photoUrl,
+    };
+
+    // 2. Se houver arquivo, faz upload no Cloudinary
+
+    // 3. Envia para o serviço
+    return this.driversService.create(createDriverDto as any);
   }
 
   @Get()
@@ -28,9 +58,29 @@ export class DriversController {
   }
 
   @Patch(':id')
+  @UseInterceptors(FileInterceptor('file'))
   @UseGuards(AuthGuard('jwt'))  
-  update(@Param('id') id: string, @Body() updateDriverDto: UpdateDriverDto) {
-    return this.driversService.update(id, updateDriverDto);
+  async update(
+    @Param('id') id: string, 
+    @Body() body: any, // Recebe como any pois vem do FormData (tudo string)
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+
+    let photoUrl = '';
+    if (file) {
+      photoUrl = await this.cloudinaryService.uploadImage(file);
+    }
+    const updateDriverDto = {
+      name: body.name,
+      email: body.email,
+      password: body.password,
+      cnh: body.cnh,
+      company: body.company,
+      status: body.status || 'PENDENTE',
+      toxicologyExam: body.toxicologyExam ? new Date(body.toxicologyExam) : null,
+      photoUrl: photoUrl,
+    };
+    return this.driversService.update(id, updateDriverDto as any);
   }
 
   @Delete(':id')
