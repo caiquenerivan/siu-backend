@@ -26,21 +26,14 @@ export class AuthController {
     // O "req.user" foi preenchido pelo JwtStrategy que criamos no Passo 1
     return req.user;
   }
-  /*
-  @Post('login-operator')
-  async loginOperator(@Body() loginDto: SigninDto) { // Ou @Body() body: {email: string, password: string}
-    const operator = await this.authService.validateOperator(
-      loginDto.email,
-      loginDto.password,
-    );
 
-    if (!operator) {
-      throw new UnauthorizedException('Credenciais de Operador inválidas');
-    }
-
-    return this.authService.loginOperator(operator);  
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  async getProfileMe(@Request() req) {
+    // O Guard já validou o token e colocou os dados no req.user
+    return this.authService.getMe(req.user.userId);
   }
-  */
+
   @HttpCode(HttpStatus.OK)
   @Post('login') 
   async login(@Body() signInDto: Record<string, any>) {

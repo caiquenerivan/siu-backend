@@ -38,11 +38,12 @@ export class DriversService {
       const newDriver = await tx.driver.create({
         data: {
           cnh: data.cnh,
-          company: data.company,
+          //company: data.company,
+          companyId: data.companyId,
           photoUrl: data.photoUrl,
           toxicologyExam: data.toxicologyExam,
           status: data.status || StatusMotorista.PENDENTE,
-          currentVehicleId: data.currentVehicleId,
+          //currentVehicleId: data.currentVehicleId,
           userId: newUser.id, // VINCULO AQUI
         },
         include: { user: true }, // Retorna com os dados do usuário
@@ -54,7 +55,7 @@ export class DriversService {
 
 
   // 2. FIND ALL (Protegido - Admin vê tudo)
-async findAll(paginationDto: PaginationDto) {
+  async findAll(paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
@@ -65,10 +66,10 @@ async findAll(paginationDto: PaginationDto) {
         skip: skip, // Pula os registros anteriores
         take: limit, // Pega apenas a quantidade do limite
         orderBy: { 
-           // É importante ordenar para garantir que a paginação não fique "sambando"
-           // Como drivers não tem createdAt no schema que vi antes, usei id ou user.createdAt
-           // Se tiver createdAt em driver, use ele.
-           user: { updatedAt: 'desc' } 
+            // É importante ordenar para garantir que a paginação não fique "sambando"
+            // Como drivers não tem createdAt no schema que vi antes, usei id ou user.createdAt
+            // Se tiver createdAt em driver, use ele.
+            user: { updatedAt: 'desc' } 
         },
         include: { 
           user: { 
@@ -92,7 +93,7 @@ async findAll(paginationDto: PaginationDto) {
         limit,
       },
     };
-}
+  }
 
   // 3. FIND ONE (PÚBLICO - Cuidado com dados sensíveis)
   async findOne(id: string) {
@@ -100,7 +101,7 @@ async findAll(paginationDto: PaginationDto) {
       where: { id },
       // SELECT: Filtra o que o público pode ver
       include: {
-        user: { select: { name: true, email: true, isActive: true } },
+        user: { select: { name: true, email: true, cpf: true, isActive: true } },
         vehicle: true,
       },
     });
@@ -122,7 +123,7 @@ async findAll(paginationDto: PaginationDto) {
     const { 
       name, 
       email, 
-      currentVehicleId, 
+      companyId,
       //status, 
       ...driverData 
     } = data;
@@ -137,8 +138,8 @@ async findAll(paginationDto: PaginationDto) {
         //status: status,
         
         // Atualiza relacionamento com Veículo (se enviado)
-        vehicle: currentVehicleId 
-          ? { connect: { id: currentVehicleId } } 
+        company: companyId 
+          ? { connect: { id: companyId } } 
           : undefined,
 
         // ATUALIZAÇÃO ANINHADA: Atualiza a tabela 'user' (Pai) ao mesmo tempo

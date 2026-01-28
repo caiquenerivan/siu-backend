@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { AdminsService } from './admins.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
@@ -6,6 +6,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../auth/decorators/roles.decorator'; // Importe o decorator
 import { RolesGuard } from '../auth/guards/roles.guard'; // Importe o guard
 import { Role } from '../auth/enums/role.enum'; // Importe o enum
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('admins')
 //@UseGuards(AuthGuard('jwt'), RolesGuard) // Protege TODAS as rotas de admins
@@ -19,8 +20,8 @@ export class AdminsController {
   }
 
   @Get()
-  findAll() {
-    return this.adminsService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.adminsService.findAll(paginationDto);
   }
 
   @Get(':id')
@@ -33,8 +34,18 @@ export class AdminsController {
     return this.adminsService.update(id, updateAdminDto);
   }
 
+  @Patch('by-user/:userId')
+  updateByUserId(@Param('userId') userId: string, @Body() updateAdminDto: UpdateAdminDto) {
+    return this.adminsService.updateByUserId(userId, updateAdminDto);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.adminsService.remove(id);
+  }
+
+  @Get('by-user/:userId')
+  findByUserId(@Param('userId') userId: string) {
+    return this.adminsService.findByUserId(userId);
   }
 }

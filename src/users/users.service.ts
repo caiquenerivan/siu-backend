@@ -16,5 +16,8 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
+  findByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
   // Podes implementar update e remove depois
 }

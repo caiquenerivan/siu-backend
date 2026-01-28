@@ -1,7 +1,7 @@
 // backend/prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -15,6 +15,7 @@ enum UserRole {
   ADMIN
   OPERADOR
   MOTORISTA
+  COMPANY
 }
 
 enum TipoPessoa {
@@ -36,14 +37,15 @@ enum StatusMotorista {
 
 // Tabela Central de Utilizadores (Login)
 
-
 // Tabela Central (Pai)
 model User {
   id        String   @id @default(uuid())
-  name      String   // O nome fica aqui
+  name      String // O nome fica aqui
   email     String   @unique
   password  String
-  role      UserRole // ADMIN, OPERATOR, DRIVER
+  cpf       String?  @unique
+  cnpj      String?  @unique
+  role      UserRole // ADMIN, OPERATOR, DRIVER, COMPANY
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -52,6 +54,7 @@ model User {
   admin    Admin?
   operator Operator?
   driver   Driver?
+  company  Company?
 
   @@map("users")
 }
@@ -59,69 +62,90 @@ model User {
 // Extensões (Filhos)
 
 model Admin {
-  id           String @id @default(uuid())
-  // Removemos name, email, password daqui.
-  
-  // Dados específicos de Admin
-  company      String?
-  region       String?
-  cpfCnpj      String?
-  
-  userId       String @unique
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String  @id @default(uuid())
+  region String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("admins")
 }
 
 model Operator {
-  id           String     @id @default(uuid())
+  id String @id @default(uuid())
   // Removemos name, email, password, role daqui.
-  
+
   // Dados específicos de Operador
-  type         TipoPessoa?    // Ex: "CLT", "PJ" (assumindo string ou enum)
-  company      String?
-  region       String?
-  cpf          String?
-  cnpj         String?
-  
-  userId       String     @unique
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  region String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
   @@map("operators")
 }
 
 model Driver {
-  id              String          @id @default(uuid())
+  id String @id @default(uuid())
   // Removemos name daqui.
-  
+
   // Dados específicos de Motorista
-  cnh             String          @unique
-  status          StatusMotorista @default(PENDENTE)
-  photoUrl        String?
-  company         String?
-  toxicologyExam  DateTime?
-  publicToken     String          @unique @default(uuid())
-  
-  userId          String          @unique
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  currentVehicleId String?        @unique
-  vehicle          Vehicle?       @relation(fields: [currentVehicleId], references: [id])
+  cnh            String          @unique
+  status         StatusMotorista @default(PENDENTE)
+  photoUrl       String?
+  toxicologyExam DateTime?
+  publicToken    String          @unique @default(uuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  vehicle Vehicle[]
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
   @@map("drivers")
 }
 
 model Vehicle {
-  id              String        @id @default(uuid())
-  plate           String        @unique // Placa
-  model           String
-  brand           String
-  color           String
-  status          StatusVeiculo @default(REGULAR)
-  licensingDate   DateTime
-  ownerName       String
-  
-  driver          Driver? 
+  id            String        @id @default(uuid())
+  plate         String        @unique // Placa
+  model         String
+  brand         String
+  year          String
+  color         String
+  renavam       String        @unique
+  status        StatusVeiculo @default(REGULAR)
+  licensingDate DateTime
+  ownerName     String
+
+  driverId String?
+  driver   Driver? @relation(fields: [driverId], references: [id])
+
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
 
   @@map("vehicles")
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  address   String?
+  city      String?
+  state     String?
+  zipCode   String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  operators Operator[]
+  drivers   Driver[]
+  vehicles  Vehicle[]
+
+  @@map("companies")
 }

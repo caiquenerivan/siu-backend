@@ -19,6 +19,10 @@ export class CreateVehicleDto {
   @IsString()
   color: string;
 
+  @IsNotEmpty()
+  @IsString()
+  year: string;
+
   @IsOptional()
   @IsEnum(StatusVeiculo)
   status?: StatusVeiculo;
@@ -29,5 +33,17 @@ export class CreateVehicleDto {
 
   @IsNotEmpty()
   @IsString()
+  renavam: string;
+
+  @IsNotEmpty()
+  @IsString()
   ownerName: string;
+
+  @IsOptional()
+  @IsString()
+  driverId?: string; // Opcional, pode ser atribuído depois
+
+  @IsOptional()
+  @IsString()
+  companyId?: string; // Opcional, pode ser atribuído depois
 }

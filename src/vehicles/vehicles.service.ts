@@ -23,11 +23,15 @@ export class VehiclesService {
         plate: data.plate,
         model: data.model,
         brand: data.brand,
+        year: data.year,
+        renavam: data.renavam,
         color: data.color,
         status: data.status, // Se vier nulo, usa o default do banco
-        ownerName: data.ownerName,
         // Converte string ISO para Date object
         licensingDate: new Date(data.licensingDate), 
+        ownerName: data.ownerName, // Pode ser nulo
+        driverId: data.driverId || null, // Pode ser nulo
+        companyId: data.companyId || null, // Pode ser nulo
       },
     });
   }
@@ -40,7 +44,19 @@ export class VehiclesService {
         driver: {
           select: {
             id: true,
-            user: { select: { name: true } } // Pega o nome do motorista via relação User
+            user: { select: { name: true, email: true} } // Pega o nome do motorista via relação User
+          }
+        },
+        company: {
+          select: {
+            id: true,
+            user: { 
+              select: { 
+                name: true, 
+                cnpj: true,
+                email: true
+              }
+            }
           }
         }
       }
@@ -54,6 +70,18 @@ export class VehiclesService {
       include: {
         driver: {
           include: { user: { select: { name: true, email: true } } }
+        },
+        company: {
+          select: {
+            id: true,
+            user: { 
+              select: { 
+                name: true, 
+                cnpj: true,
+                email: true
+              }
+            }
+          }
         }
       }
     });

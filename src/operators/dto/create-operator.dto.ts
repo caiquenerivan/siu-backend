@@ -1,5 +1,5 @@
 // src/operators/dto/create-operator.dto.ts
-import { IsEmail, IsString, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsNotEmpty, MinLength } from 'class-validator';
 // Se você estiver usando validação (recomendado). Se não, remova os decorators.
 
 export class CreateOperatorDto {
@@ -12,22 +12,19 @@ export class CreateOperatorDto {
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
   password: string;
 
   // Campos Opcionais (conforme seu schema)
   @IsOptional()
-  company?: string;
+  @IsString()
+  companyId?: string;
 
   @IsOptional()
+  @IsString()
   region?: string;
 
   @IsOptional()
+  @IsString()
   cpf?: string;
-
-  @IsOptional()
-  cnpj?: string;
-
-  // Se 'TipoPessoa' for um Enum no Prisma, aqui recebemos como string ou o próprio Enum
-  @IsOptional()
-  type?: 'PF' | 'PJ'; 
 }

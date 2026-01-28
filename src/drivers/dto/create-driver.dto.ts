@@ -23,7 +23,7 @@ export class CreateDriverDto {
 
   @IsOptional()
   @IsString()
-  company?: string;
+  companyId?: string;
   
   @IsOptional()
   @IsString()

@@ -6,6 +6,7 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup.dto';
@@ -48,9 +49,9 @@ export class AuthService {
           admin: {
             create: {
               // name: dto.name, <--- REMOVIDO! (O nome já está no User)
-              company: dto.company,
+              //company: dto.company,
               region: dto.region,
-              cpfCnpj: dto.cpfCnpj,
+              //cpfCnpj: dto.cpfCnpj,
             },
           },
         },
@@ -61,7 +62,7 @@ export class AuthService {
           role: true,
           admin: {
             select: {
-              company: true, // Só campos que existem em Admin
+              //company: true, // Só campos que existem em Admin
               region: true,
             },
           },
@@ -131,6 +132,26 @@ export class AuthService {
         role: user.role,
       }
     };
+  }
+
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        driver: true,   // Traz dados da CNH, Foto, etc.
+        admin: true,    // Traz dados de Admin
+        operator: true, // Traz dados de Operador
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
+    // Remove a senha do retorno por segurança
+    const { password, ...result } = user;
+    
+    return result;
   }
   
   // MÉTODOS DELETADOS: validateOperator, loginOperator

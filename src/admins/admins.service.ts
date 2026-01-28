@@ -4,6 +4,8 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '@prisma/client';
+import { find } from 'rxjs';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class AdminsService {
@@ -33,14 +35,13 @@ export class AdminsService {
 
       return tx.admin.create({
         data: {
-          company: data.company,
+          //company: data.company,
           region: data.region,
-          cpfCnpj: data.cpfCnpj,
           userId: newUser.id, // Vincula ao pai
         },
         include: {
           user: { // Retorna os dados do usuário criado, menos a senha
-            select: { id: true, name: true, email: true, role: true }
+            select: { id: true, cpf: true, cnpj: true, name: true, email: true, role: true }
           }
         },
       });
@@ -48,7 +49,7 @@ export class AdminsService {
   }
 
   // 2. FIND ALL
-  async findAll() {
+  async findAll1() {
     return this.prisma.admin.findMany({
       include: {
         user: {
@@ -62,6 +63,45 @@ export class AdminsService {
       },
     });
   }
+
+  async findAll(paginationDto: PaginationDto) {
+      const { page = 1, limit = 10 } = paginationDto;
+      const skip = (page - 1) * limit;
+  
+      // Usamos Promise.all para executar as duas consultas ao mesmo tempo (Paralelismo)
+      const [admin, total] = await Promise.all([
+        // 1. Busca os dados da página atual
+        this.prisma.admin.findMany({
+          skip: skip, // Pula os registros anteriores
+          take: limit, // Pega apenas a quantidade do limite
+          orderBy: { 
+              // É importante ordenar para garantir que a paginação não fique "sambando"
+              // Como drivers não tem createdAt no schema que vi antes, usei id ou user.createdAt
+              // Se tiver createdAt em driver, use ele.
+              user: { updatedAt: 'desc' } 
+          },
+          include: { 
+            user: { 
+              select: { id: true, name: true, email: true, isActive: true } 
+            }
+          },
+        }),
+  
+        // 2. Conta o total de registros (para saber quantas páginas existem)
+        this.prisma.admin.count(),
+      ]);
+  
+      // Retorno estruturado para o Frontend
+      return {
+        data: admin,
+        meta: {
+          total,
+          page,
+          lastPage: Math.ceil(total / limit),
+          limit,
+        },
+      };
+    }
 
   // 3. FIND ONE
   async findOne(id: string) {
@@ -81,6 +121,27 @@ export class AdminsService {
     });
 
     if (!admin) throw new NotFoundException('Administrador não encontrado.');
+    return admin;
+  }
+
+  async findByUserId(userId: string) {
+    const admin = await this.prisma.admin.findUnique({
+      where: { userId },
+      include: {
+
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isActive: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!admin) throw new NotFoundException('Administrador não encontrado para o usuário fornecido.');
     return admin;
   }
 
@@ -116,6 +177,34 @@ export class AdminsService {
       include: { user: { select: { name: true, email: true, isActive: true } } },
     });
   }
+
+  async updateByUserId(userId: string, data: UpdateAdminDto) {
+    await this.findByUserId(userId); // Garante que existe
+
+    const { name, email, password, isActive, ...adminData } = data;
+
+    let hashedPassword: string | undefined;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    return this.prisma.admin.update({
+      where: { userId },
+      data: {
+        // Atualiza campos específicos do Admin
+        ...adminData,
+
+        user: {
+          update: {
+            ...(name && { name }),
+            ...(email && { email }),
+            ...(isActive !== undefined && { isActive }),
+            ...(hashedPassword && { password: hashedPassword }),
+          },
+        },
+      },
+    });
+  } 
 
   // 5. REMOVE
   async remove(id: string) {

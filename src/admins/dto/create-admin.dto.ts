@@ -16,15 +16,16 @@ export class CreateAdminDto {
   password: string;
 
   // --- DADOS ESPECÍFICOS DO ADMIN ---
-  @IsNotEmpty()
-  @IsString()
-  company: string;
 
   @IsNotEmpty()
   @IsString()
   region: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  cpfCnpj: string;
+  cpf: string;
+
+  @IsOptional()
+  @IsString()
+  cnpj: string;
 }
