@@ -48,10 +48,7 @@ export class AuthService {
           // Cria o registro na tabela admin vinculado automaticamente
           admin: {
             create: {
-              // name: dto.name, <--- REMOVIDO! (O nome já está no User)
-              //company: dto.company,
               region: dto.region,
-              //cpfCnpj: dto.cpfCnpj,
             },
           },
         },

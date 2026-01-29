@@ -13,16 +13,8 @@ export class SignupDto {
   @IsNotEmpty()
   name: string;
 
-  // Campos específicos do Admin/Empresa
-  @IsString()
-  @IsNotEmpty()
-  company: string;
-
   @IsString()
   @IsNotEmpty()
   region: string;
 
-  @IsString()
-  @IsNotEmpty()
-  cpfCnpj: string;
 }
