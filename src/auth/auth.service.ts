@@ -99,10 +99,19 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
+    let resolvedCompanyId: string | null = null;
+
+    if (user.company) {
+      resolvedCompanyId = user.company.id;
+    } else if (user.driver) {
+      resolvedCompanyId = user.driver.companyId;
+    } else if (user.operator) {
+      resolvedCompanyId = user.operator.companyId;
+    }
 
     // 3. Gera Token
     // O payload leva o ID do User (sub) e a Role
-    const payload = { sub: user.id, email: user.email, role: user.role, companyId: user?.company?.id || user?.operator?.companyId || user?.driver?.companyId };
+    const payload = { sub: user.id, email: user.email, role: user.role};
 
     return {
       access_token: await this.jwtService.signAsync(payload),
@@ -115,7 +124,8 @@ export class AuthService {
         company: user.company,
         driver: user.driver,
         operator: user.operator,
-        admin: user.admin
+        admin: user.admin, 
+        companyId: resolvedCompanyId 
       },
     };
   }
