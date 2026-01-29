@@ -81,6 +81,12 @@ export class AuthService {
     // 1. Busca na tabela USER (serve para Admin, Driver e Operator)
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: {
+        company: true,
+        driver: true,
+        operator: true,
+        admin: true
+      }
     });
 
     if (!user) {
@@ -96,7 +102,7 @@ export class AuthService {
 
     // 3. Gera Token
     // O payload leva o ID do User (sub) e a Role
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { sub: user.id, email: user.email, role: user.role, companyId: user?.company?.id || user?.operator?.companyId || user?.driver?.companyId };
 
     return {
       access_token: await this.jwtService.signAsync(payload),
@@ -105,6 +111,11 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+
+        company: user.company,
+        driver: user.driver,
+        operator: user.operator,
+        admin: user.admin
       },
     };
   }
