@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('vehicles')
 @UseGuards(AuthGuard('jwt')) // Apenas usuários logados mexem em veículos
@@ -15,8 +16,8 @@ export class VehiclesController {
   }
 
   @Get()
-  findAll() {
-    return this.vehiclesService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.vehiclesService.findAll(paginationDto);
   }
 
   @Get(':id')

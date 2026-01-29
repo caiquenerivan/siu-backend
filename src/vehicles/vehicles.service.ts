@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class VehiclesService {
@@ -37,30 +38,50 @@ export class VehiclesService {
   }
 
   // 2. FIND ALL
-  async findAll() {
-    return this.prisma.vehicle.findMany({
-      include: {
-        // Mostra quem está dirigindo o carro no momento (se houver)
-        driver: {
-          select: {
-            id: true,
-            user: { select: { name: true, email: true} } // Pega o nome do motorista via relação User
-          }
-        },
-        company: {
-          select: {
-            id: true,
-            user: { 
-              select: { 
-                name: true, 
-                cnpj: true,
-                email: true
+  async findAll(paginationDto: PaginationDto) {
+    
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [vehicles, total] = await Promise.all([
+      this.prisma.vehicle.findMany({
+        skip: skip,
+        take: limit,
+        orderBy: { model: 'asc' },
+        include: {
+          // Mostra quem está dirigindo o carro no momento (se houver)
+          driver: {
+            select: {
+              id: true,
+              user: { select: { name: true, email: true} } // Pega o nome do motorista via relação User
+            }
+          },
+          company: {
+            select: {
+              id: true,
+              user: { 
+                select: { 
+                  name: true, 
+                  cnpj: true,
+                  email: true
+                }
               }
             }
           }
         }
-      }
-    });
+      }),
+      this.prisma.vehicle.count(),
+    ]);
+
+    return {
+      data: vehicles,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+        limit,
+      },
+    };
   }
 
   // 3. FIND ONE

@@ -4,6 +4,7 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt'; // Não esqueça de importar o bcrypt
 import { UserRole } from '@prisma/client';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class CompaniesService {
@@ -63,17 +64,45 @@ export class CompaniesService {
 
   // --- O Resto do CRUD (findAll, update) também muda ligeiramente ---
 
-  async findAll() {
-    return this.prisma.company.findMany({
-      orderBy: { user: { name: 'asc' } },
-      // Se quiser saber quantos operadores tem em cada empresa:
-      include: {
-        user: true,
-        _count: {
-          select: { operators: true } 
+  async findAll(paginationDto: PaginationDto) {
+
+
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [companies, total] = await Promise.all([
+      this.prisma.company.findMany({
+        skip: skip,
+        take: limit,
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          user: {
+          select: {
+            name: true,
+            email: true,
+            cnpj: true // Importante trazer o CNPJ que está no User
+          }
+          },
+          _count: {
+            select: { 
+              operators: true, 
+              vehicles: true 
+            } 
+          }
         }
-      }
-    });
+      }),
+      this.prisma.company.count()
+    ]);
+
+    return {
+      data: companies,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+        limit,
+      },
+    };
   }
 
   async findOne(id: string) {
