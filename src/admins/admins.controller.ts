@@ -9,8 +9,8 @@ import { Role } from '../auth/enums/role.enum'; // Importe o enum
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('admins')
-//@UseGuards(AuthGuard('jwt'), RolesGuard) // Protege TODAS as rotas de admins
-//@Roles(Role.ADMIN)
+@UseGuards(AuthGuard('jwt'), RolesGuard) // Protege TODAS as rotas de admins
+@Roles(Role.ADMIN)
 export class AdminsController {
   constructor(private readonly adminsService: AdminsService) {}
 
@@ -24,6 +24,16 @@ export class AdminsController {
     return this.adminsService.findAll(paginationDto);
   }
 
+  @Get('by-user/:userId')
+  findByUserId(@Param('userId') userId: string) {
+    return this.adminsService.findByUserId(userId);
+  }
+
+  @Patch('by-user/:userId')
+  updateByUserId(@Param('userId') userId: string, @Body() updateAdminDto: UpdateAdminDto) {
+    return this.adminsService.updateByUserId(userId, updateAdminDto);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.adminsService.findOne(id);
@@ -34,18 +44,11 @@ export class AdminsController {
     return this.adminsService.update(id, updateAdminDto);
   }
 
-  @Patch('by-user/:userId')
-  updateByUserId(@Param('userId') userId: string, @Body() updateAdminDto: UpdateAdminDto) {
-    return this.adminsService.updateByUserId(userId, updateAdminDto);
-  }
+  
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.adminsService.remove(id);
   }
 
-  @Get('by-user/:userId')
-  findByUserId(@Param('userId') userId: string) {
-    return this.adminsService.findByUserId(userId);
-  }
 }

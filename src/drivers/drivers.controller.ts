@@ -6,6 +6,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { Role } from 'src/auth/enums/role.enum';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import type { UserPayload } from 'src/auth/models/user-payload-interface';
+import { FilterCompanyDto } from 'src/common/dto/filterCompany.dto';
 
 @Controller('drivers')
 export class DriversController {
@@ -17,6 +22,7 @@ export class DriversController {
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   @UseGuards(AuthGuard('jwt'))
+  @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR)
   async create(@Body() body: any, @UploadedFile() file: Express.Multer.File,) {
     
     console.log('Dados recebidos:', body); // Para debug
@@ -47,19 +53,25 @@ export class DriversController {
 
   @Get()
   @UseGuards(AuthGuard('jwt'))  
+  @Roles(Role.ADMIN)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.driversService.findAll(paginationDto);
   }
 
-  @Get(':id')
-  @UseGuards(AuthGuard('jwt'))  
-  findOne(@Param('id') id: string) {
-    return this.driversService.findOne(id);
+
+  
+  @Get('by-company')
+  @UseGuards(AuthGuard('jwt'))
+  @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR)
+  findByCompany(@Query() query: FilterCompanyDto) {
+    const { companyId, ...paginationDto} = query;
+    return this.driversService.findByCompany(companyId, paginationDto);
   }
 
   @Patch(':id')
   @UseInterceptors(FileInterceptor('file'))
   @UseGuards(AuthGuard('jwt'))  
+  @Roles(Role.COMPANY, Role.ADMIN, Role.MOTORISTA, Role.OPERADOR)
   async update(
     @Param('id') id: string, 
     @Body() body: any, // Recebe como any pois vem do FormData (tudo string)
@@ -70,24 +82,41 @@ export class DriversController {
     if (file) {
       photoUrl = await this.cloudinaryService.uploadImage(file);
     }
+    const isoDate= new Date(body.toxicologyExam).toISOString();
     const updateDriverDto = {
       name: body.name,
       email: body.email,
       password: body.password,
       cnh: body.cnh,
-      company: body.company,
+      companyId: body.companyId,
       status: body.status || 'PENDENTE',
-      toxicologyExam: body.toxicologyExam ? new Date(body.toxicologyExam) : null,
+      toxicologyExam: isoDate || null,
       photoUrl: photoUrl,
     };
-    return this.driversService.update(id, updateDriverDto as any);
+    return this.driversService.update(id, updateDriverDto as UpdateDriverDto);
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))  
-  remove(@Param('id') id: string) {
-    return this.driversService.remove(id);
+  @UseGuards(AuthGuard('jwt'))
+  @Roles(Role.COMPANY, Role.ADMIN, Role.MOTORISTA)  
+  remove(@Param('id') id: string, @CurrentUser() user: UserPayload) {
+    return this.driversService.remove(id, user);
   }
+
+  @Get('by-user/:id')
+  @UseGuards(AuthGuard('jwt'))  
+  @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR, Role.MOTORISTA)
+  findByUserId(@Param('id') id: string) {
+    return this.driversService.findByUserId(id);
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard('jwt'))  
+  @Roles(Role.ADMIN)
+  findOne(@Param('id') id: string) {
+    return this.driversService.findOne(id);
+  }
+
 
   // Exemplo de URL: http://localhost:3000/drivers/qrcode/123e4567-e89b...
   @Get('qrcode/:token') 

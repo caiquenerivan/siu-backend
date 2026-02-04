@@ -84,6 +84,92 @@ export class VehiclesService {
     };
   }
 
+
+  async findByDriver(driverId: string, paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [vehicles, total] = await Promise.all([
+      this.prisma.vehicle.findMany({
+        where: { driverId },
+        skip: skip,
+        take: limit,
+        include: {
+          driver: {
+          include: { user: { select: { name: true, email: true } } }
+        },
+        company: {
+          select: {
+            id: true,
+            user: { 
+              select: { 
+                name: true, 
+                cnpj: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    }),
+      this.prisma.vehicle.count({ where: { driverId } }),
+    ]);
+
+    return {
+      data: vehicles,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+        limit,
+      },
+    };
+  } 
+
+  async findByCompany(companyId: string, paginationDto: PaginationDto) {      
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const filter = { companyId: companyId };
+
+    const [vehicles, total] = await Promise.all([
+      this.prisma.vehicle.findMany({
+        where: { companyId },
+        skip: skip,
+        take: limit,
+        include: {
+          driver: {
+            include: { user: { select: { name: true, email: true } } }
+        },
+        company: {
+          select: {
+            id: true,
+            user: { 
+              select: { 
+                name: true, 
+                cnpj: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    }),
+    this.prisma.vehicle.count({ where: filter }),
+    ]);
+
+    return {
+      data: vehicles,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+        limit,
+      },
+    };
+  }
+
+
   // 3. FIND ONE
   async findOne(id: string) {
     const vehicle = await this.prisma.vehicle.findUnique({
@@ -110,7 +196,7 @@ export class VehiclesService {
     if (!vehicle) throw new NotFoundException('Veículo não encontrado');
     return vehicle;
   }
-
+  
   // 4. UPDATE
   async update(id: string, data: UpdateVehicleDto) {
     await this.findOne(id); // Garante que existe

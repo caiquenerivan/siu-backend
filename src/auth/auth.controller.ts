@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Get, Request, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignupDto } from './dto/signup.dto';
+//import { SignupDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RegisterDto } from './dto/register.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /*
   @Post('signup')
   async signup(@Body() dto: SignupDto) {
     return this.authService.signup(dto);
   }
+  */
 
   @HttpCode(HttpStatus.OK)
   @Post('signin')
@@ -46,5 +49,11 @@ export class AuthController {
 
     // 2. Gerar Token
     return this.authService.login(user);
+  }
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED) // Retorna 201 Created
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 }

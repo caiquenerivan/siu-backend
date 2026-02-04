@@ -86,7 +86,8 @@ export class CompaniesService {
           _count: {
             select: { 
               operators: true, 
-              vehicles: true 
+              vehicles: true,
+              drivers: true,
             } 
           }
         }
@@ -112,7 +113,11 @@ export class CompaniesService {
         user: true,
         operators: {
           include: { user: true } // Traz os operadores vinculados
-        }
+        },
+        drivers: { 
+          include: { user: true } 
+        },
+        vehicles: true
       }
     });
 
@@ -121,6 +126,20 @@ export class CompaniesService {
     }
 
     return company;
+  }
+
+  findByUserId(userId: string) {
+    return this.prisma.company.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        operators: {
+          include: { user: true } // Traz os operadores vinculados
+        },
+        vehicles: true,
+        drivers: {include: {user: true}},
+      }
+    });
   }
 
 // --- Update (Com suporte a atualizar User e Company) ---

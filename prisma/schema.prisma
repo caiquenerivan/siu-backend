@@ -51,10 +51,13 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relações 1 para 1 (Opcionais, pois um User só terá UM desses preenchido)
-  admin    Admin?
+  admin Admin?
+
   operator Operator?
-  driver   Driver?
-  company  Company?
+
+  driver Driver?
+
+  company Company?
 
   @@map("users")
 }

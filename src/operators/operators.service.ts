@@ -7,47 +7,11 @@ import { UserRole } from '@prisma/client';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Prisma } from '@prisma/client';
+import { data } from 'react-router-dom';
 
 @Injectable()
 export class OperatorsService {
   constructor(private prisma: PrismaService) {}
-
-
-/*
-  async create(data: CreateOperatorDto) {
-    // Verifica email duplicado na tabela USER
-    const userExists = await this.prisma.user.findUnique({ 
-        where: { email: data.email } 
-    });
-    if (userExists) throw new BadRequestException('Email já cadastrado');
-
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-
-    // Transação: Cria User + Operator
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Cria o Usuário base
-      const newUser = await tx.user.create({
-        data: {
-          name: data.name,
-          email: data.email,
-          password: hashedPassword,
-          cpf: data.cpf,
-          role: UserRole.OPERADOR, // Define a role fixa
-        },
-      });
-
-      // 2. Cria o Operador vinculado
-      return tx.operator.create({
-        data: {
-          region: data.region,
-          companyId: data.companyId,
-          userId: newUser.id,    // Vínculo
-        },
-        include: { user: true },
-      });
-    });
-  }
-  */
 
   async create(createOperatorDto: CreateOperatorDto) {
     // 1. Verifica duplicidade de email
@@ -145,7 +109,59 @@ export class OperatorsService {
       },
     };
   }
-  
+
+  async findByUserId(userId: string){
+      const operator = await this.prisma.operator.findUnique({
+      where: { userId },
+      include: {
+        user: { select: { name: true, email: true, isActive: true } },
+      },
+    });
+
+    if (!operator) throw new NotFoundException('Operador não encontrado');
+    return operator;
+  }
+
+  async findByCompany(companyId: string, paginationDto: PaginationDto) {      
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [operators, total] = await Promise.all([
+      this.prisma.operator.findMany({
+        where: { companyId },
+        skip: skip,
+        take: limit,
+        include: {
+          user: {
+            select: { name: true, email: true, cpf: true, isActive: true }
+          },
+          company: {
+            select: {
+              id: true,
+              user: { 
+                select: { 
+                  name: true, 
+                  cnpj: true,
+                  email: true
+                }
+              }
+            }
+          }
+        },
+      }),
+    this.prisma.operator.count({ where: { companyId } }),
+    ]);
+
+    return{
+      data: operators,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total/limit),
+        limit,
+      },
+    };
+  }
 
   // 3. FIND ONE
   async findOne(id: string) {
@@ -159,6 +175,7 @@ export class OperatorsService {
     if (!operator) throw new NotFoundException('Operador não encontrado');
     return operator;
   }
+
 
   // 4. UPDATE
   async update(id: string, data: UpdateOperatorDto) {

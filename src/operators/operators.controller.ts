@@ -7,35 +7,53 @@ import { Role } from 'src/auth/enums/role.enum';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { FilterCompanyDto } from 'src/common/dto/filterCompany.dto';
 
 @Controller('operators')
-
 @UseGuards(AuthGuard('jwt'), RolesGuard) // Protege TODAS as rotas de operators
-@Roles(Role.ADMIN || Role.OPERADOR)
+@Roles(Role.ADMIN || Role.COMPANY )
 export class OperatorsController {
   constructor(private readonly operatorsService: OperatorsService) {}
 
   @Post()
+  @Roles(Role.ADMIN, Role.COMPANY)
   create(@Body() createOperatorDto: CreateOperatorDto) {
     return this.operatorsService.create(createOperatorDto);
   }
 
   @Get()
+  @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.operatorsService.findAll(paginationDto);
   }
 
+  @Get('by-company')
+  @Roles(Role.ADMIN, Role.COMPANY)
+  findByCompany(@Query() query: FilterCompanyDto) {
+    const { companyId, ...paginationDto} = query;
+    return this.operatorsService.findByCompany(companyId, paginationDto);
+  }
+
+  @Get('by-user/:id')
+  @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR)
+  findByUserId(@Param('id') id: string) {
+    return this.operatorsService.findByUserId(id);
+  }
+
   @Get(':id')
+  @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR)
   findOne(@Param('id') id: string) {
     return this.operatorsService.findOne(id);
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN, Role.COMPANY)
   update(@Param('id') id: string, @Body() updateOperatorDto: UpdateOperatorDto) {
     return this.operatorsService.update(id, updateOperatorDto);
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN, Role.COMPANY)
   remove(@Param('id') id: string) {
     return this.operatorsService.remove(id);
   }

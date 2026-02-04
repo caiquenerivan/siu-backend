@@ -30,10 +30,6 @@ export class CreateDriverDto {
   photoUrl?: string;
 
   @IsOptional()
-  @IsUUID()
-  currentVehicleId?: string;
-
-  @IsOptional()
   @IsEnum(StatusMotorista)
   status?: StatusMotorista;
 

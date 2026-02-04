@@ -65,44 +65,64 @@ export class AdminsService {
   }
 
   async findAll(paginationDto: PaginationDto) {
-      const { page = 1, limit = 10 } = paginationDto;
-      const skip = (page - 1) * limit;
-  
-      // Usamos Promise.all para executar as duas consultas ao mesmo tempo (Paralelismo)
-      const [admin, total] = await Promise.all([
-        // 1. Busca os dados da página atual
-        this.prisma.admin.findMany({
-          skip: skip, // Pula os registros anteriores
-          take: limit, // Pega apenas a quantidade do limite
-          orderBy: { 
-              // É importante ordenar para garantir que a paginação não fique "sambando"
-              // Como drivers não tem createdAt no schema que vi antes, usei id ou user.createdAt
-              // Se tiver createdAt em driver, use ele.
-              user: { updatedAt: 'desc' } 
-          },
-          include: { 
-            user: { 
-              select: { id: true, name: true, email: true, isActive: true } 
-            }
-          },
-        }),
-  
-        // 2. Conta o total de registros (para saber quantas páginas existem)
-        this.prisma.admin.count(),
-      ]);
-  
-      // Retorno estruturado para o Frontend
-      return {
-        data: admin,
-        meta: {
-          total,
-          page,
-          lastPage: Math.ceil(total / limit),
-          limit,
-        },
-      };
-    }
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
 
+    // Usamos Promise.all para executar as duas consultas ao mesmo tempo (Paralelismo)
+    const [admin, total] = await Promise.all([
+      // 1. Busca os dados da página atual
+      this.prisma.admin.findMany({
+        skip: skip, // Pula os registros anteriores
+        take: limit, // Pega apenas a quantidade do limite
+        orderBy: { 
+            // É importante ordenar para garantir que a paginação não fique "sambando"
+            // Como drivers não tem createdAt no schema que vi antes, usei id ou user.createdAt
+            // Se tiver createdAt em driver, use ele.
+            user: { updatedAt: 'desc' } 
+        },
+        include: { 
+          user: { 
+            select: { id: true, name: true, email: true, isActive: true } 
+          }
+        },
+      }),
+
+      // 2. Conta o total de registros (para saber quantas páginas existem)
+      this.prisma.admin.count(),
+    ]);
+
+    // Retorno estruturado para o Frontend
+    return {
+      data: admin,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+        limit,
+      },
+    };
+  }
+  
+  async findByUserId(userId: string) {
+  const admin = await this.prisma.admin.findUnique({
+    where: { userId },
+    include: {
+
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          isActive: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  if (!admin) throw new NotFoundException('Administrador não encontrado para o usuário fornecido.');
+  return admin;
+}
   // 3. FIND ONE
   async findOne(id: string) {
     const admin = await this.prisma.admin.findUnique({
@@ -124,26 +144,7 @@ export class AdminsService {
     return admin;
   }
 
-  async findByUserId(userId: string) {
-    const admin = await this.prisma.admin.findUnique({
-      where: { userId },
-      include: {
-
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            isActive: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
-
-    if (!admin) throw new NotFoundException('Administrador não encontrado para o usuário fornecido.');
-    return admin;
-  }
+  
 
   // 4. UPDATE
   async update(id: string, data: UpdateAdminDto) {

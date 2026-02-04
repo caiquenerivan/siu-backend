@@ -1,10 +1,11 @@
-import { Injectable,NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable,NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import * as bcrypt from 'bcrypt'; // npm install bcrypt
 import { StatusMotorista, UserRole } from '@prisma/client';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { UserPayload } from 'src/auth/models/user-payload-interface';
 
 @Injectable()
 export class DriversService {
@@ -113,6 +114,50 @@ export class DriversService {
     return driver;
   }
 
+  async findByUserId(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      // SELECT: Filtra o que o público pode ver
+      include: {
+        driver: { select: { id: true, cnh: true, status: true, photoUrl: true } },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Motorista não encontrado`);
+    }
+
+    return user;
+  }
+
+  async findByCompany(companyId: string, paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [drivers, total] = await Promise.all([
+      this.prisma.driver.findMany({
+        where: { companyId },
+        skip: skip,
+        take: limit,
+        include: {
+          user: { select: { name: true, email: true, cpf: true, isActive: true } },
+          vehicle: true,
+        },
+      }),
+      this.prisma.driver.count({ where: { companyId } }),
+    ]);
+
+    return {
+      data: drivers,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+        limit,
+      },
+    };
+  }
+
   // --- 4. UPDATE (Protegido) ---
   async update(id: string, data: UpdateDriverDto) {
       // 1. Garante que o motorista existe
@@ -157,15 +202,35 @@ export class DriversService {
 
 
   // 5. REMOVE (Protegido)
-  async remove(id: string) {
+  async remove(id: string, requestUser: UserPayload) {
     // 1. Busca o motorista para pegar o ID do Usuário dele
     const driver = await this.findOne(id);
+    if (!driver) {
+      throw new NotFoundException('Motorista não encontrado.');
+    }
 
-    // 2. Deleta o USUÁRIO (Pai). 
-    // Graças ao "onDelete: Cascade" no schema, o registro em 'drivers' também será apagado.
-    return this.prisma.user.delete({
-      where: { id: driver.userId },
-    });
+      const isAdmin = requestUser.role === 'ADMIN';
+
+      // Caso 2: É o próprio motorista?
+      // Verifica se o ID do usuário logado é igual ao ID do usuário do motorista
+      const isSelf = requestUser.id === driver.userId;
+
+      // Caso 3: É a empresa associada ao motorista?
+      // Verifica se quem chamou é uma empresa E se é a MESMA empresa do motorista
+      const isOwnerCompany = 
+        requestUser.role === 'COMPANY' && 
+        driver.companyId === requestUser.companyId;
+
+      // Se não for nenhum dos três, bloqueia.
+      if (!isAdmin && !isSelf && !isOwnerCompany) {
+        throw new ForbiddenException('Você não tem permissão para excluir este motorista.');
+      }
+
+      // 2. Deleta o USUÁRIO (Pai). 
+      // Graças ao "onDelete: Cascade" no schema, o registro em 'drivers' também será apagado.
+      return this.prisma.user.delete({
+        where: { id: driver.userId },
+      });
   }
 
   // --- BUSCA PÚBLICA (QR Code) Atualizada ---
