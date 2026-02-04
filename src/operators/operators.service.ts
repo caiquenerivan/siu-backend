@@ -7,7 +7,6 @@ import { UserRole } from '@prisma/client';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Prisma } from '@prisma/client';
-import { data } from 'react-router-dom';
 
 @Injectable()
 export class OperatorsService {
