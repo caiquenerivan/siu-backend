@@ -78,21 +78,35 @@ export class DriversController {
     @UploadedFile() file: Express.Multer.File,
   ) {
 
-    let photoUrl = '';
-    if (file) {
-      photoUrl = await this.cloudinaryService.uploadImage(file);
-    }
-    const isoDate= new Date(body.toxicologyExam).toISOString();
-    const updateDriverDto = {
+    const updateDriverDto: Partial<UpdateDriverDto> = {
       name: body.name,
       email: body.email,
-      password: body.password,
       cnh: body.cnh,
-      companyId: body.companyId,
-      status: body.status || 'PENDENTE',
-      toxicologyExam: isoDate || null,
-      photoUrl: photoUrl,
+      status: body.status, // Se vier undefined, o service deve ignorar ou manter o antigo
     };
+
+    // 2. Lógica da FOTO: Só atualiza se tiver arquivo novo
+    if (file) {
+      const url = await this.cloudinaryService.uploadImage(file);
+      updateDriverDto.photoUrl = url;
+    }
+    // IMPORTANTE: Se não entrar no if, o campo photoUrl fica undefined 
+    // e o Prisma ignora, mantendo a foto antiga.
+
+    // 3. Lógica da DATA: Só converte se tiver valor
+    if (body.toxicologyExam) {
+      updateDriverDto.toxicologyExam = new Date(body.toxicologyExam).toISOString();
+    }
+
+    // 4. Lógica da SENHA: Só atualiza se não for vazia
+    if (body.password && body.password.trim() !== '') {
+      updateDriverDto.password = body.password;
+    }
+
+    // 5. Lógica da EMPRESA e CPF (Opcionais)
+    if (body.companyId) updateDriverDto.companyId = body.companyId;
+    if (body.cpf) (updateDriverDto).cpf = body.cpf; // Caso seu DTO tenha esse campo
+
     return this.driversService.update(id, updateDriverDto as UpdateDriverDto);
   }
 

@@ -201,6 +201,10 @@ export class VehiclesService {
   async update(id: string, data: UpdateVehicleDto) {
     await this.findOne(id); // Garante que existe
 
+    if (data.driverId === '' || data.driverId === null) {
+      data.driverId = undefined;
+    }
+
     // Se estiver tentando mudar a placa, verifica se a nova já não existe
     if (data.plate) {
       const plateExists = await this.prisma.vehicle.findUnique({

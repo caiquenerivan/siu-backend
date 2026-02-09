@@ -30,6 +30,7 @@ export class DriversService {
         data: {
           name: data.name,
           email: data.email,
+          cpf: data.cpf,
           password: hashedPassword,
           role: UserRole.MOTORISTA, // Força a role correta
         },
@@ -74,7 +75,7 @@ export class DriversService {
         },
         include: { 
           user: { 
-            select: { id: true, name: true, email: true, isActive: true } 
+            select: { id: true, name: true, email: true, isActive: true, cpf: true, createdAt: true } 
           },
           vehicle: true 
         },
@@ -102,7 +103,7 @@ export class DriversService {
       where: { id },
       // SELECT: Filtra o que o público pode ver
       include: {
-        user: { select: { name: true, email: true, cpf: true, isActive: true } },
+        user: { select: { name: true, email: true, cpf: true, isActive: true, createdAt: true, updatedAt: true } },
         vehicle: true,
       },
     });
@@ -140,7 +141,7 @@ export class DriversService {
         skip: skip,
         take: limit,
         include: {
-          user: { select: { name: true, email: true, cpf: true, isActive: true } },
+          user: { select: { name: true, email: true, cpf: true, isActive: true, createdAt: true } },
           vehicle: true,
         },
       }),
@@ -168,6 +169,7 @@ export class DriversService {
     const { 
       name, 
       email, 
+      cpf,
       companyId,
       //status, 
       ...driverData 
@@ -193,6 +195,7 @@ export class DriversService {
             // Só passa os campos se eles vieram no DTO
             ...(name && { name }),
             ...(email && { email }),
+            ...(cpf && { cpf }),
           },
         },
       },
