@@ -58,14 +58,27 @@ export class DriversController {
     return this.driversService.findAll(paginationDto);
   }
 
-
-  
   @Get('by-company')
   @UseGuards(AuthGuard('jwt'))
   @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR)
   findByCompany(@Query() query: FilterCompanyDto) {
     const { companyId, ...paginationDto} = query;
     return this.driversService.findByCompany(companyId, paginationDto);
+  }
+
+
+  @Get('by-user/:userId')
+  @UseGuards(AuthGuard('jwt'))  
+  @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR, Role.MOTORISTA)
+  findByUserId(@Param('userId') userId: string) {
+    return this.driversService.findByUserId(userId);
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard('jwt'))  
+  @Roles(Role.ADMIN)
+  findOne(@Param('id') id: string) {
+    return this.driversService.findOne(id);
   }
 
   @Patch(':id')
@@ -117,19 +130,6 @@ export class DriversController {
     return this.driversService.remove(id, user);
   }
 
-  @Get('by-user/:id')
-  @UseGuards(AuthGuard('jwt'))  
-  @Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR, Role.MOTORISTA)
-  findByUserId(@Param('id') id: string) {
-    return this.driversService.findByUserId(id);
-  }
-
-  @Get(':id')
-  @UseGuards(AuthGuard('jwt'))  
-  @Roles(Role.ADMIN)
-  findOne(@Param('id') id: string) {
-    return this.driversService.findOne(id);
-  }
 
 
   // Exemplo de URL: http://localhost:3000/drivers/qrcode/123e4567-e89b...

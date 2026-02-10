@@ -113,7 +113,8 @@ export class OperatorsService {
       const operator = await this.prisma.operator.findUnique({
       where: { userId },
       include: {
-        user: { select: { name: true, email: true, isActive: true } },
+        user: { select: { name: true, email: true, isActive: true, cpf: true } },
+        company: true
       },
     });
 
@@ -209,6 +210,40 @@ export class OperatorsService {
       include: { user: true, company: true},
     });
   }
+
+  async updateByUserId(userId: string, data: UpdateOperatorDto) {
+      await this.findByUserId(userId); // Garante que existe
+  
+      const { name, email, password, isActive, cpf, companyId, ...operatorData } = data;
+  
+      let hashedPassword: string | undefined;
+      if (password) {
+        hashedPassword = await bcrypt.hash(password, 10);
+      }
+  
+      return this.prisma.operator.update({
+        where: { userId },
+        data: {
+          // Atualiza campos específicos do Admin
+          ...operatorData,
+  
+          user: {
+            update: {
+              ...(name && { name }),
+              ...(email && { email }),
+              ...(cpf && { cpf }),
+              ...(isActive !== undefined && { isActive }),
+              ...(hashedPassword && { password: hashedPassword }),
+            },
+          ...(companyId && {
+            company: {
+              connect: { id: companyId },
+            },
+          }),
+          },
+        },
+      });
+    } 
 
   // 5. REMOVE
   async remove(id: string) {

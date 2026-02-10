@@ -10,10 +10,12 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true,
   }));
+  const origin = process.env.ORIGIN_URL;
 
   app.enableCors({
+    origin: origin,
     //origin: 'http://localhost:5173', // A porta padrão do Vite
-    origin: 'https://siu.inf.br/', // A porta padrão do Vite
+    //origin: 'https://siu.inf.br/', // A porta padrão do Vite
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

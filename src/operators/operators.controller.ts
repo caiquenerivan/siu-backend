@@ -11,7 +11,7 @@ import { FilterCompanyDto } from 'src/common/dto/filterCompany.dto';
 
 @Controller('operators')
 @UseGuards(AuthGuard('jwt'), RolesGuard) // Protege TODAS as rotas de operators
-@Roles(Role.ADMIN || Role.COMPANY )
+@Roles(Role.ADMIN, Role.COMPANY, Role.OPERADOR )
 export class OperatorsController {
   constructor(private readonly operatorsService: OperatorsService) {}
 
@@ -50,6 +50,12 @@ export class OperatorsController {
   @Roles(Role.ADMIN, Role.COMPANY)
   update(@Param('id') id: string, @Body() updateOperatorDto: UpdateOperatorDto) {
     return this.operatorsService.update(id, updateOperatorDto);
+  }
+
+  @Patch('by-user/:userId')
+  @Roles(Role.OPERADOR)
+  updateByUserId(@Param('userId') userId: string, @Body() updateOperatorDto: UpdateOperatorDto) {
+    return this.operatorsService.updateByUserId(userId, updateOperatorDto);
   }
 
   @Delete(':id')

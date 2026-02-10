@@ -262,7 +262,8 @@ export class AuthService {
       include: {
         driver: true,   // Traz dados da CNH, Foto, etc.
         admin: true,    // Traz dados de Admin
-        operator: true, // Traz dados de Operador
+        operator: true, // Traz dados de Operador,
+        company: true,
       },
     });
 

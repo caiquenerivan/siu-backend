@@ -18,22 +18,32 @@ export class VehiclesService {
     if (vehicleExists) {
       throw new BadRequestException('Já existe um veículo com esta placa.');
     }
+    const vehicleWithSameRenavam = await this.prisma.vehicle.findUnique({
+      where: { renavam: data.renavam },
+    });
+
+    if (vehicleWithSameRenavam) {
+      throw new BadRequestException('Já existe um veículo com este RENAVAM.');
+    }
+
+    const { driverId, companyId, licensingDate, ...vehicleData } = data;
 
     return this.prisma.vehicle.create({
       data: {
-        plate: data.plate,
-        model: data.model,
-        brand: data.brand,
-        year: data.year,
-        renavam: data.renavam,
-        color: data.color,
-        status: data.status, // Se vier nulo, usa o default do banco
-        // Converte string ISO para Date object
-        licensingDate: new Date(data.licensingDate), 
-        ownerName: data.ownerName, // Pode ser nulo
-        driverId: data.driverId || null, // Pode ser nulo
-        companyId: data.companyId || null, // Pode ser nulo
-      },
+      ...vehicleData, // Espalha os dados comuns (model, brand, color, etc)
+      licensingDate: licensingDate ? new Date(licensingDate) : undefined,
+      
+      // LÓGICA DE PROTEÇÃO:
+      // Só tenta conectar o motorista se driverId existir E não for string vazia
+      driver: (driverId && driverId !== '') 
+        ? { connect: { id: driverId } } 
+        : undefined,
+
+      // Mesma coisa para a empresa
+      company: (companyId && companyId !== '') 
+        ? { connect: { id: companyId } } 
+        : undefined,
+    },
     });
   }
 

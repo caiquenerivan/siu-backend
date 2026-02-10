@@ -121,7 +121,7 @@ model Vehicle {
   color         String
   renavam       String        @unique
   status        StatusVeiculo @default(REGULAR)
-  licensingDate DateTime
+  licensingDate DateTime?
   ownerName     String
 
   driverId String?

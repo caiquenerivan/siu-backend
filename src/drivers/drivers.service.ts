@@ -97,6 +97,24 @@ export class DriversService {
     };
   }
 
+  
+  async findByUserId(userId: string) {
+    const driver = await this.prisma.driver.findUnique({
+      where: { userId },
+      // SELECT: Filtra o que o público pode ver
+      include: {
+        user:  true,
+        company: true,
+      },
+    });
+
+    if (!driver) {
+      throw new NotFoundException(`Motorista não encontrado`);
+    }
+
+    return driver;
+  }
+
   // 3. FIND ONE (PÚBLICO - Cuidado com dados sensíveis)
   async findOne(id: string) {
     const driver = await this.prisma.driver.findUnique({
@@ -113,22 +131,6 @@ export class DriversService {
     }
 
     return driver;
-  }
-
-  async findByUserId(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      // SELECT: Filtra o que o público pode ver
-      include: {
-        driver: { select: { id: true, cnh: true, status: true, photoUrl: true } },
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`Motorista não encontrado`);
-    }
-
-    return user;
   }
 
   async findByCompany(companyId: string, paginationDto: PaginationDto) {

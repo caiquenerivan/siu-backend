@@ -113,6 +113,8 @@ export class AdminsService {
           id: true,
           name: true,
           email: true,
+          cpf: true,
+          cnpj: true,
           isActive: true,
           createdAt: true,
         },
@@ -151,7 +153,7 @@ export class AdminsService {
     await this.findOne(id); // Garante que existe
 
     // Separa dados do User (Pai) dos dados do Admin (Filho)
-    const { name, email, password, isActive, ...adminData } = data;
+    const { name, email, password, isActive, cnpj, cpf, ...adminData } = data;
 
     // Se houver senha nova, faz o hash (opcional)
     let hashedPassword: string | undefined;
@@ -170,6 +172,8 @@ export class AdminsService {
           update: {
             ...(name && { name }),
             ...(email && { email }),
+            ...(cpf && { cpf }),
+            ...(cnpj && { cnpj }),
             ...(isActive !== undefined && { isActive }),
             ...(hashedPassword && { password: hashedPassword }),
           },
@@ -182,7 +186,7 @@ export class AdminsService {
   async updateByUserId(userId: string, data: UpdateAdminDto) {
     await this.findByUserId(userId); // Garante que existe
 
-    const { name, email, password, isActive, ...adminData } = data;
+    const { name, email, password, isActive, cnpj, cpf, ...adminData } = data;
 
     let hashedPassword: string | undefined;
     if (password) {
@@ -199,6 +203,8 @@ export class AdminsService {
           update: {
             ...(name && { name }),
             ...(email && { email }),
+            ...(cpf && { cpf }),
+            ...(cnpj && { cnpj }),
             ...(isActive !== undefined && { isActive }),
             ...(hashedPassword && { password: hashedPassword }),
           },
