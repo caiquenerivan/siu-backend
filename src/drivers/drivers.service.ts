@@ -164,7 +164,7 @@ export class DriversService {
   // --- 4. UPDATE (Protegido) ---
   async update(id: string, data: UpdateDriverDto) {
       // 1. Garante que o motorista existe
-    await this.findOne(id);
+    const currentDriver = await this.findOne(id);
 
     // 2. Separa os dados: O que é do User e o que é do Driver?
     // Se o DTO tiver senha, precisaria de hash, mas vamos focar em nome/email/status
@@ -176,6 +176,35 @@ export class DriversService {
       //status, 
       ...driverData 
     } = data;
+
+    if (!currentDriver) {
+      throw new NotFoundException('Motorista não encontrado');
+    }
+
+    // 2. VERIFICAÇÃO DE EMAIL (Se foi enviado no DTO)
+    if (data.email && data.email !== currentDriver.user.email) {
+      const userWithEmail = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
+      
+      // Se achou alguém E não é o mesmo usuário do motorista atual -> ERRO
+      if (userWithEmail && userWithEmail.id !== currentDriver.userId) {
+        throw new BadRequestException('Este email já está em uso por outro usuário.');
+      }
+    }
+
+    // 3. VERIFICAÇÃO DE CPF (Se houver lógica de CPF no User ou Driver)
+    // ... lógica similar ...
+
+    // 4. VERIFICAÇÃO DE CNH (Se foi enviada)
+    if (data.cnh && data.cnh !== currentDriver.cnh) {
+      const driverWithCNH = await this.prisma.driver.findUnique({
+        where: { cnh: data.cnh },
+      });
+      if (driverWithCNH && driverWithCNH.id !== id) {
+        throw new BadRequestException('Esta CNH já está cadastrada para outro motorista.');
+      }
+    }
 
 
     return this.prisma.driver.update({
